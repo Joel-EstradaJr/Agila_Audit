@@ -1,3 +1,0 @@
-npm install
-npx prisma migrate dev --name AuditDB
-npm run seed:actions

@@ -39,6 +39,7 @@ action_at       DateTime  @default(now())
 previous_data   Json?     // store only fields that changed
 new_data        Json?     // store only fields that changed
 version         Int       @default(1) // versioning for the same entity changes
+ip_address      String?
 
 // versioning to be strictly sequential per entity
 @@unique([entity_type, entity_id, version])
@@ -53,6 +54,7 @@ action_type     action_type @relation(fields: [action_type_id], references: [id]
 @@index([action_by])
 @@index([entity_type, action_type_id, action_at])
 @@index([action_at])
+@@index([ip_address])
 }
 
 // END OF FINANCE AUDIT LOGS MICROSERVICE SCHEMA

@@ -1,24 +1,19 @@
 
-backend:
-pnpm install
-pnpm prisma:generate
-pnpm prisma:migrate
-pnpm seed:apikeys
-pnpm backend:dev
+# Quick Start Commands
 
-frontend:
+First time setup:
+pnpm setup
+
+Run both backend and frontend together:
+pnpm dev
+
+Run individually:
+Backend only: pnpm backend:dev
+Frontend only: pnpm frontend:dev
+
 npm install
-npm run dev
-
-Redis Cache (Optional):
-Install Redis on your system:
-- Windows: Download from https://github.com/microsoftarchive/redis/releases
-- Mac: brew install redis
-- Linux: sudo apt-get install redis-server
-
-Start Redis: redis-server
-Enable cache in .env: ENABLE_CACHE=true
-Cache is disabled by default (ENABLE_CACHE=false)
+npx prisma migrate dev --name AuditDB
+npm run seed:actions
 
 
 For SAVING Actions (src\routes\auditLogs.routes.ts):

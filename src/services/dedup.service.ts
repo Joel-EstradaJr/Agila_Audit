@@ -3,37 +3,15 @@
 // ============================================================================
 
 import { prisma } from '../prisma/client';
-import { Redis } from '@upstash/redis';
-
-// Initialize Redis client for fast dedup checks (if available)
-let redisClient: Redis | null = null;
-
-if (process.env.ENABLE_CACHE === 'true' && process.env.UPSTASH_REDIS_REST_URL) {
-  redisClient = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-  });
-}
 
 class DedupService {
   /**
    * Check if an event ID has already been processed
-   * Uses Redis for fast lookup, falls back to database
    */
   async isDuplicate(eventId: string, sourceService: string): Promise<boolean> {
     if (!eventId) return false;
 
     try {
-      // Try Redis first (fast)
-      if (redisClient) {
-        const key = `audit:dedup:${eventId}`;
-        const exists = await redisClient.get(key);
-        if (exists) {
-          console.log(`[Dedup] Duplicate event detected (Redis): ${eventId}`);
-          return true;
-        }
-      }
-
       // Check database
       const existing = await prisma.eventDedup.findUnique({
         where: { eventId },
@@ -41,13 +19,6 @@ class DedupService {
 
       if (existing) {
         console.log(`[Dedup] Duplicate event detected (DB): ${eventId}`);
-        
-        // Cache in Redis if not already there
-        if (redisClient) {
-          const key = `audit:dedup:${eventId}`;
-          await redisClient.set(key, '1', { ex: 3600 }); // 1 hour TTL
-        }
-        
         return true;
       }
 
@@ -77,12 +48,6 @@ class DedupService {
           expiresAt,
         },
       });
-
-      // Store in Redis for fast lookup
-      if (redisClient) {
-        const key = `audit:dedup:${eventId}`;
-        await redisClient.set(key, '1', { ex: 604800 }); // 7 days TTL
-      }
 
       console.log(`[Dedup] Event marked as processed: ${eventId}`);
     } catch (error: any) {

@@ -14,6 +14,7 @@ const department_admin_routes_1 = __importDefault(require("./routes/department_a
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const summaries_routes_1 = __importDefault(require("./routes/summaries.routes"));
 const apiKeys_routes_1 = __importDefault(require("./routes/apiKeys.routes"));
+const auditLogs_routes_1 = __importDefault(require("./routes/auditLogs.routes"));
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
@@ -40,6 +41,7 @@ app.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development',
     });
 });
+app.use('/api/audit-logs', auditLogs_routes_1.default);
 app.use('/api/super-admin', super_admin_routes_1.default);
 app.use('/api/department-admin', department_admin_routes_1.default);
 app.use('/api/user', user_routes_1.default);

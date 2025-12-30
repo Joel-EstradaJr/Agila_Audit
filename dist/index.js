@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const app_1 = __importDefault(require("./app"));
 const client_1 = __importDefault(require("./prisma/client"));
-const cache_util_1 = __importDefault(require("./utils/cache.util"));
 dotenv_1.default.config();
 const PORT = process.env.BACKEND_PORT || 4004;
 const HOST = process.env.HOST || 'localhost';
@@ -31,7 +30,6 @@ async function startServer() {
 async function gracefulShutdown(signal) {
     console.log(`\n${signal} received, shutting down gracefully...`);
     try {
-        await cache_util_1.default.disconnect();
         await client_1.default.$disconnect();
         console.log('✅ Database disconnected');
         process.exit(0);

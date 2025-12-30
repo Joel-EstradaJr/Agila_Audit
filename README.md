@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Audit Logs Microservice
 
-## Getting Started
+Full-stack audit logging system with Next.js frontend and Express backend.
 
-First, run the development server:
+## 🚀 Quick Start
+
+### First Time Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm setup
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This will:
+- Install dependencies
+- Generate Prisma client
+- Run database migrations
+- Seed API keys
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Running the Application
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Run both frontend and backend together:**
+```bash
+pnpm dev
+```
+
+This starts:
+- Frontend (Next.js) on [http://localhost:4003](http://localhost:4003)
+- Backend (Express API) on [http://localhost:4004](http://localhost:4004)
+
+**Run individually:**
+```bash
+# Backend only
+pnpm backend:dev
+
+# Frontend only
+pnpm frontend:dev
+```
+
+## 📋 Available Scripts
+
+- `pnpm setup` - First-time setup (install, migrate, seed)
+- `pnpm dev` - Run both backend and frontend concurrently
+- `pnpm backend:dev` - Run backend API only
+- `pnpm frontend:dev` - Run frontend only
+- `pnpm build` - Build for production
+- `pnpm prisma:studio` - Open Prisma Studio
+
+## 🔧 Configuration
+
+Make sure your `.env` file is configured with:
+- Database URLs
+- JWT secret
+- API keys
+- Port configuration (Backend: 4004, Frontend: 4003)
+
+## 📚 Documentation
+
+See the `docs/` folder for detailed documentation:
+- [Backend README](docs/BACKEND_README.md)
+- [API Documentation](docs/API_DOCUMENTATION.md)
+- [Quick Reference](docs/QUICK_REFERENCE.md)
+- [How to Run](docs/HOW_TO_RUN.md)
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Express.js Documentation](https://expressjs.com/)

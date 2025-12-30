@@ -45,8 +45,8 @@ async function createAuditLog(data) {
             entity_id: data.entity_id,
             action_type_id,
             action_by: data.action_by || null,
-            previous_data: data.previous_data || null,
-            new_data: data.new_data || null,
+            previous_data: data.previous_data || undefined,
+            new_data: data.new_data || undefined,
             version,
         },
         include: {
@@ -144,7 +144,7 @@ async function getAuditLogs(filters, user) {
         },
     });
     return {
-        logs: logs,
+        logs,
         total,
         page,
         limit,
@@ -282,5 +282,5 @@ async function searchAuditLogs(searchTerm, user, page = 1, limit = 10) {
         }),
         client_1.default.audit_log.count({ where }),
     ]);
-    return { logs: logs, total };
+    return { logs, total };
 }

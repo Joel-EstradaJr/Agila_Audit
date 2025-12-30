@@ -5,7 +5,6 @@
 import dotenv from 'dotenv';
 import app from './app';
 import prisma from './prisma/client';
-import cache from './utils/cache.util';
 
 // Load environment variables
 dotenv.config();
@@ -47,9 +46,6 @@ async function gracefulShutdown(signal: string) {
   console.log(`\n${signal} received, shutting down gracefully...`);
   
   try {
-    // Disconnect Redis
-    await cache.disconnect();
-    
     // Disconnect database
     await prisma.$disconnect();
     console.log('✅ Database disconnected');

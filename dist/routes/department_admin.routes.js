@@ -9,6 +9,7 @@ const auditLogs_controller_1 = require("../controllers/auditLogs.controller");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticateJWT);
 router.use(roleAccess_middleware_1.requireDepartmentAdmin);
+router.post('/audit-logs', rateLimit_middleware_1.writeRateLimiter, (0, errorHandler_middleware_1.asyncHandler)(auditLogs_controller_1.createAuditLogHandler));
 router.get('/audit-logs', rateLimit_middleware_1.readRateLimiter, (0, errorHandler_middleware_1.asyncHandler)(auditLogs_controller_1.getAuditLogsHandler));
 router.get('/audit-logs/stats', rateLimit_middleware_1.readRateLimiter, (0, errorHandler_middleware_1.asyncHandler)(auditLogs_controller_1.getAuditLogStatsHandler));
 router.get('/audit-logs/search', rateLimit_middleware_1.readRateLimiter, (0, errorHandler_middleware_1.asyncHandler)(auditLogs_controller_1.searchAuditLogsHandler));
