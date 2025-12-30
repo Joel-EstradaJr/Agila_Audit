@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-//@ts-ignore
 import '../styles/components/itemTable.css';
 
 // Types

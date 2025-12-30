@@ -5,7 +5,6 @@ import "@app/styles/audit/audit.css";
 import PaginationComponent from "@app/Components/pagination";
 import Swal from "sweetalert2";
 import Loading from '@app/Components/loading';
-import ErrorDisplay from '@app/Components/errordisplay';
 import { showSuccess, showError, showConfirmation } from '@app/utils/Alerts';
 import { formatDisplayText } from '@/app/utils/formatting';
 import FilterDropdown, { FilterSection } from "@app/Components/filter";
@@ -48,7 +47,7 @@ const formatDateTime = (timestamp: string | undefined) => {
       minute: '2-digit',
       hour12: true
     });
-  } catch (e) {
+  } catch {
     return 'Invalid Date';
   }
 };
@@ -61,7 +60,8 @@ type ViewModalProps = {
 const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
   if (!log) return null;
 
-  const getActionIcon = (action: string) => {
+  const getActionIcon = (action?: string) => {
+    if (!action) return '📋';
     switch (action.toUpperCase()) {
       case 'CREATE': return '✨';
       case 'UPDATE': return '✏️';
@@ -72,7 +72,8 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
     }
   };
 
-  const getTableIcon = (table: string) => {
+  const getTableIcon = (table?: string) => {
+    if (!table) return '📊';
     switch (table.toLowerCase()) {
       case 'expenserecord': return '💰';
       case 'revenuerecord': return '📈';
@@ -105,8 +106,8 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
                   <div className="audit-detail-content">
                     <div className="audit-detail-label">Action</div>
                     <div className="audit-detail-value">
-                      <span className={`action-badge ${log.action.toLowerCase()}`}>
-                        {log.action}
+                      <span className={`action-badge ${(log.action || '').toLowerCase()}`}>
+                        {log.action || 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -115,7 +116,7 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
                   <div className="audit-detail-icon">{getTableIcon(log.table_affected)}</div>
                   <div className="audit-detail-content">
                     <div className="audit-detail-label">Table Affected</div>
-                    <div className="audit-detail-value">{formatDisplayText(log.table_affected)}</div>
+                    <div className="audit-detail-value">{formatDisplayText(log.table_affected || '')}</div>
                   </div>
                 </div>
               </div>
@@ -127,7 +128,7 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
                   <div className="audit-detail-content">
                     <div className="audit-detail-label">Record ID</div>
                     <div className="audit-detail-value">
-                      <span className="code-text">{log.record_id}</span>
+                      <span className="code-text">{log.record_id || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -135,7 +136,7 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
                   <div className="audit-detail-icon">👤</div>
                   <div className="audit-detail-content">
                     <div className="audit-detail-label">Performed By</div>
-                    <div className="audit-detail-value">{log.performed_by}</div>
+                    <div className="audit-detail-value">{log.performed_by || 'N/A'}</div>
                   </div>
                 </div>
                 <div className="audit-detail-row">
@@ -174,8 +175,6 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
 const AuditPage = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<number | string | null>(null);
   const [search, setSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
@@ -244,11 +243,8 @@ const AuditPage = () => {
   // fetch function moved out so it can be retried from ErrorDisplay
   const fetchAuditLogs = async () => {
     try {
-      setError(null);
-      setErrorCode(null);
       const response = await fetch(`${API_BASE_URL}/api/audit-logs`);
       if (!response.ok) {
-        setErrorCode(response.status);
         throw new Error(response.statusText || 'Failed to fetch audit logs');
       }
       const data = await response.json();
@@ -274,7 +270,7 @@ const AuditPage = () => {
       }
       
       // Transform backend format to frontend format
-      const transformedLogs = logs.map((log: any) => ({
+      const transformedLogs = logs.map((log: Record<string, unknown>) => ({
         // Backend fields (schema-aligned)
         id: log.id,
         entity_type: log.entity_type,
@@ -297,15 +293,9 @@ const AuditPage = () => {
       }));
       
       setAuditLogs(transformedLogs);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching audit logs:', err);
       setAuditLogs([]); // Always set to empty array on error to prevent .filter() errors
-      if (err instanceof TypeError) {
-        // network failure
-        setErrorCode('network');
-      } else if (!errorCode) {
-        setError(err?.message || 'Failed to load audit logs');
-      }
     } finally {
       setLoading(false);
     }
@@ -313,7 +303,6 @@ const AuditPage = () => {
 
   useEffect(() => {
     fetchAuditLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sort handler
@@ -343,7 +332,7 @@ const AuditPage = () => {
       if (!isNaN(dateObj.getTime())) {
         logDate = dateObj.toISOString().split('T')[0];
       }
-    } catch (e) {
+    } catch {
       console.warn('Invalid date for log:', log);
     }
     
@@ -616,10 +605,10 @@ const AuditPage = () => {
             <tbody>{currentRecords.map((log) => (
               <tr key={log.log_id} onClick={() => setSelectedLog(log)}>
                 <td>{formatDateTime(log.timestamp)}</td>
-                <td>{log.action}</td>
-                <td>{formatDisplayText(log.table_affected)}</td>
-                <td>{log.record_id}</td>
-                <td>{log.performed_by}</td>
+                <td>{log.action || 'N/A'}</td>
+                <td>{formatDisplayText(log.table_affected || '')}</td>
+                <td>{log.record_id || 'N/A'}</td>
+                <td>{log.performed_by || 'N/A'}</td>
                 <td>{log.ip_address || 'N/A'}</td>
               </tr>
             ))}</tbody></table>

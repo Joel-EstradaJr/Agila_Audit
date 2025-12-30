@@ -26,6 +26,6 @@
       "@app/utils/*": ["./app/utils/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "app/**/*.ts", "app/**/*.tsx", "app/**/*.d.ts", "global.d.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

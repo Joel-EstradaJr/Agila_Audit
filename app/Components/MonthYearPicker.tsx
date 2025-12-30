@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import '../styles/components/MonthYearPicker.css';
 
 interface MonthYearPickerProps {
@@ -33,70 +33,28 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
-  const months = [
+  const months = useMemo(() => [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  ], []);
 
   // Generate flexible year range (10 years back, current year, 10 years forward)
   const startYear = currentYear - 10;
-  const endYear = currentYear + 10;
   const years = Array.from({ length: 21 }, (_, i) => startYear + i);
 
-  // Initialize selected values from prop
-  useEffect(() => {
-    if (value) {
-      const [year, month] = value.split('-').map(Number);
-      setSelectedYear(year);
-      setSelectedMonth(month - 1); // Convert to 0-based index
-      setInputValue(formatDisplayValue());
-    } else {
-      setInputValue('');
-      setSelectedYear(null);
-      setSelectedMonth(null);
-    }
-  }, [value]);
-
-  // Close picker when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        if (inputMode) {
-          handleInputSubmit();
-        }
-      }
-    };
-
-    if (isOpen || inputMode) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, inputMode, inputValue]);
-
-  // Focus input when entering input mode
-  useEffect(() => {
-    if (inputMode && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [inputMode]);
-
-  const formatDisplayValue = () => {
+  // Format display value callback (defined before useEffects)
+  const formatDisplayValue = useCallback(() => {
     if (!value) return placeholder;
     const [year, month] = value.split('-').map(Number);
     return `${months[month - 1]} ${year}`;
-  };
+  }, [value, placeholder, months]);
 
   const isPastMonth = (year: number, month: number) => {
     return year < currentYear || (year === currentYear && month < currentMonth);
   };
 
   // Validate input format
-  const validateInput = (input: string) => {
+  const validateInput = useCallback((input: string) => {
     // Support multiple formats: "MM/YYYY", "MM-YYYY", "YYYY-MM", "January 2024", etc.
     const formats = [
       /^(\d{1,2})\/(\d{4})$/,          // MM/YYYY or M/YYYY
@@ -140,17 +98,9 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
     }
 
     return { month: 0, year: currentYear, isValid: false };
-  };
+  }, [months, currentYear]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setInputValue(newValue);
-    
-    const validation = validateInput(newValue);
-    setIsValid(validation.isValid);
-  };
-
-  const handleInputSubmit = () => {
+  const handleInputSubmit = useCallback(() => {
     if (inputValue.trim() === '') {
       setInputMode(false);
       return;
@@ -169,6 +119,56 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
       setIsValid(true);
     }
     setInputMode(false);
+  }, [inputValue, value, onChange, formatDisplayValue, validateInput]);
+
+  // Initialize selected values from prop
+  useEffect(() => {
+    if (value) {
+      const [year, month] = value.split('-').map(Number);
+      setSelectedYear(year);
+      setSelectedMonth(month - 1); // Convert to 0-based index
+      setInputValue(formatDisplayValue());
+    } else {
+      setInputValue('');
+      setSelectedYear(null);
+      setSelectedMonth(null);
+    }
+  }, [value, formatDisplayValue]);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        if (inputMode) {
+          handleInputSubmit();
+        }
+      }
+    };
+
+    if (isOpen || inputMode) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, inputMode, inputValue, handleInputSubmit]);
+
+  // Focus input when entering input mode
+  useEffect(() => {
+    if (inputMode && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [inputMode]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    
+    const validation = validateInput(newValue);
+    setIsValid(validation.isValid);
   };
 
   const handleInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

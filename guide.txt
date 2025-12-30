@@ -11,14 +11,19 @@ Run individually:
 Backend only: pnpm backend:dev
 Frontend only: pnpm frontend:dev
 
+# Production Build
+npm run build
+
 # Database Setup
 pnpm install
 npx prisma migrate dev --name AuditDB
 
 # Seed Database (TypeScript files are used)
- pnpm seed:actions    # Seed action types (CREATE, UPDATE, DELETE, etc.)
-# pnpm seed:apikeys    # Seed API keys for microservices
-# pnpm seed:all        # Seed both action types and API keys
+pnpm seed:actions    # Seed action types (CREATE, UPDATE, DELETE, etc.)
+# pnpm seed:apikeys   # Seed API keys for microservices (CURRENTLY BROKEN - apiKey model missing from schema)
+# pnpm seed:all       # Seed both action types and API keys (partially works)
+
+Note: Only seed:actions is fully functional. The apiKey seeder references a Prisma model that doesn't exist in the schema.
 
 # API Endpoints
 For SAVING Actions (src\routes\auditLogs.routes.ts):
