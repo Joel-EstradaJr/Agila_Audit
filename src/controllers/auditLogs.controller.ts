@@ -39,7 +39,13 @@ export async function createAuditLogHandler(
       return;
     }
 
-    const auditLog = await createAuditLog(req.body);
+    // Capture IP address from request
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket.remoteAddress;
+
+    const auditLog = await createAuditLog({
+      ...req.body,
+      ip_address: typeof ip_address === 'string' ? ip_address : (Array.isArray(ip_address) ? ip_address[0] : undefined),
+    });
 
     sendSuccess(
       res,

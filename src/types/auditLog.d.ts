@@ -40,6 +40,7 @@ export interface CreateAuditLogDTO {
   action_by?: string;         // User ID who performed the action
   previous_data?: object;     // Previous state (only changed fields)
   new_data?: object;          // New state (only changed fields)
+  ip_address?: string;        // IP address of the request
 }
 
 export interface AuditLogFilters {
@@ -69,7 +70,22 @@ export interface AuditLogResponse {
   previous_data: any;
   new_data: any;
   version: number;
+  ip_address: string | null;
   created_at: Date;
+}
+
+// Brief version for list view
+export interface AuditLogBriefResponse {
+  id: number;
+  entity_type: string;
+  entity_id: string;
+  action_type_id: number;        // From schema
+  action_type_code: string;      // Computed from join
+  action_by: string | null;
+  action_at: Date;
+  version: number;
+  ip_address: string | null;     // From schema
+  created_at: Date;              // From schema
 }
 
 // ============================================================================

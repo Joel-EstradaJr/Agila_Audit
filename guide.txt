@@ -11,18 +11,27 @@ Run individually:
 Backend only: pnpm backend:dev
 Frontend only: pnpm frontend:dev
 
-npm install
+# Database Setup
+pnpm install
 npx prisma migrate dev --name AuditDB
-npm run seed:actions
 
+# Seed Database (TypeScript files are used)
+ pnpm seed:actions    # Seed action types (CREATE, UPDATE, DELETE, etc.)
+# pnpm seed:apikeys    # Seed API keys for microservices
+# pnpm seed:all        # Seed both action types and API keys
 
+# API Endpoints
 For SAVING Actions (src\routes\auditLogs.routes.ts):
 POST http://localhost:4004/api/audit-logs
 
 For VIEWING Actions:
 GET http://localhost:4004/api/audit-logs
 
-
+# Configuration Files
 For UserRole Name condition:
 src\utils\validation.util.ts
 src\types\auditLog.d.ts
+
+# Seeder Files (TypeScript versions are used)
+Action Types: prisma/seedActionTypes.ts
+API Keys: src/scripts/seedApiKeys.ts

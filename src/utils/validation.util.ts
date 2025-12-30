@@ -39,6 +39,11 @@ export function validateCreateAuditLog(data: any): {
     errors.push('new_data must be an object');
   }
 
+  // ip_address is optional but should be a string if provided
+  if (data.ip_address && typeof data.ip_address !== 'string') {
+    errors.push('ip_address must be a string');
+  }
+
   return {
     isValid: errors.length === 0,
     errors,

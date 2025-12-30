@@ -14,25 +14,43 @@ import FilterDropdown, { FilterSection } from "@app/Components/filter";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4004';
 
 type AuditLog = {
-  log_id: string;
-  action: string;
-  table_affected: string;
-  record_id: string;
-  performed_by: string;
-  timestamp: string;
-  details: string;
-  ip_address?: string;
+  // Backend fields (from schema)
+  id: number;
+  entity_type: string;
+  entity_id: string;
+  action_type_id: number;
+  action_type_code: string;
+  action_by: string | null;
+  action_at: string;
+  version: number;
+  ip_address: string | null;
+  created_at: string;
+  // UI compatibility fields (computed)
+  log_id?: string;
+  action?: string;
+  table_affected?: string;
+  record_id?: string;
+  performed_by?: string;
+  timestamp?: string;
+  details?: string;
 };
 
-const formatDateTime = (timestamp: string) => {
-  return new Date(timestamp).toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
+const formatDateTime = (timestamp: string | undefined) => {
+  if (!timestamp) return 'N/A';
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (e) {
+    return 'Invalid Date';
+  }
 };
 
 type ViewModalProps = {
@@ -236,19 +254,49 @@ const AuditPage = () => {
       const data = await response.json();
       
       // Handle different response formats
-      // Backend might return { success: true, data: [...] } or just [...]
-      if (Array.isArray(data)) {
-        setAuditLogs(data);
+      let logs = [];
+      
+      // Backend returns { success: true, data: [...], meta: {...} }
+      if (data && data.success && Array.isArray(data.data)) {
+        logs = data.data;
+      } else if (data && Array.isArray(data.logs)) {
+        logs = data.logs;
+      } else if (Array.isArray(data)) {
+        logs = data;
       } else if (data && Array.isArray(data.data)) {
-        setAuditLogs(data.data);
+        logs = data.data;
       } else if (data && data.success === false) {
-        // Handle error response from backend
         throw new Error(data.message || 'Failed to fetch audit logs');
       } else {
-        // Unknown format, set empty array to prevent .filter() errors
         console.warn('Unexpected response format:', data);
         setAuditLogs([]);
+        return;
       }
+      
+      // Transform backend format to frontend format
+      const transformedLogs = logs.map((log: any) => ({
+        // Backend fields (schema-aligned)
+        id: log.id,
+        entity_type: log.entity_type,
+        entity_id: log.entity_id,
+        action_type_id: log.action_type_id,
+        action_type_code: log.action_type_code,
+        action_by: log.action_by,
+        action_at: log.action_at,
+        version: log.version,
+        ip_address: log.ip_address,
+        created_at: log.created_at,
+        // Mapped fields for UI compatibility
+        log_id: String(log.id),
+        action: log.action_type_code,
+        table_affected: log.entity_type,
+        record_id: log.entity_id,
+        performed_by: log.action_by || 'System',
+        timestamp: log.action_at,
+        details: `Version ${log.version} - ${log.action_type_code} on ${log.entity_type}`
+      }));
+      
+      setAuditLogs(transformedLogs);
     } catch (err: any) {
       console.error('Error fetching audit logs:', err);
       setAuditLogs([]); // Always set to empty array on error to prevent .filter() errors
@@ -288,7 +336,17 @@ const AuditPage = () => {
     const matchesTable = tableFilter ? 
       tableFilter.split(',').some(table => log.table_affected === table.trim()) : true;
     
-    const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+    // Safely handle date parsing
+    let logDate = '';
+    try {
+      const dateObj = new Date(log.timestamp || log.action_at);
+      if (!isNaN(dateObj.getTime())) {
+        logDate = dateObj.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      console.warn('Invalid date for log:', log);
+    }
+    
     const matchesDate = (!dateFrom || logDate >= dateFrom) && (!dateTo || logDate <= dateTo);
     
     const matchesAction = actionFilter ? 

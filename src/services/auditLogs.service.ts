@@ -8,6 +8,7 @@ import {
   AuditLogFilters,
   JWTUser,
   AuditLogResponse,
+  AuditLogBriefResponse,
 } from '../types/auditLog';
 
 /**
@@ -67,6 +68,7 @@ export async function createAuditLog(
       action_by: data.action_by || null,
       previous_data: data.previous_data || undefined,
       new_data: data.new_data || undefined,
+      ip_address: data.ip_address || null,
       version,
     },
     include: {
@@ -124,12 +126,12 @@ function buildAccessFilter(user: JWTUser): any {
 }
 
 /**
- * Get audit logs with filters and access control
+ * Get audit logs with filters and access control (Brief version for list)
  */
 export async function getAuditLogs(
   filters: AuditLogFilters,
   user: JWTUser
-): Promise<{ logs: AuditLogResponse[]; total: number; page: number; limit: number }> {
+): Promise<{ logs: AuditLogBriefResponse[]; total: number; page: number; limit: number }> {
   const {
     entity_type,
     entity_id,
@@ -191,25 +193,46 @@ export async function getAuditLogs(
   // Get total count
   const total = await prisma.audit_log.count({ where });
 
-  // Get paginated results
+  // Get paginated results with brief data
   const logs = await prisma.audit_log.findMany({
     where,
     orderBy: { [sortBy]: sortOrder },
     skip: (page - 1) * limit,
     take: limit,
-    include: {
+    select: {
+      id: true,
+      entity_type: true,
+      entity_id: true,
+      action_type_id: true,    // Schema field
+      action_by: true,
+      action_at: true,
+      version: true,
+      ip_address: true,        // Schema field
+      created_at: true,        // Schema field
       action_type: {
         select: {
-          id: true,
           code: true,
-          description: true,
         },
       },
     },
   });
 
+  // Transform to brief format
+  const briefLogs: AuditLogBriefResponse[] = logs.map((log) => ({
+    id: log.id,
+    entity_type: log.entity_type,
+    entity_id: log.entity_id,
+    action_type_id: log.action_type_id,    // Schema field
+    action_type_code: log.action_type.code, // Computed for convenience
+    action_by: log.action_by,
+    action_at: log.action_at,
+    version: log.version,
+    ip_address: log.ip_address,            // Schema field
+    created_at: log.created_at,            // Schema field
+  }));
+
   return {
-    logs,
+    logs: briefLogs,
     total,
     page,
     limit,

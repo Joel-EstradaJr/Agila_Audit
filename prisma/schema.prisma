@@ -40,11 +40,10 @@ previous_data   Json?     // store only fields that changed
 new_data        Json?     // store only fields that changed
 version         Int       @default(1) // versioning for the same entity changes
 ip_address      String?
+created_at      DateTime  @default(now())
 
 // versioning to be strictly sequential per entity
 @@unique([entity_type, entity_id, version])
-
-created_at      DateTime  @default(now())
 
 // Relations
 action_type     action_type @relation(fields: [action_type_id], references: [id])
