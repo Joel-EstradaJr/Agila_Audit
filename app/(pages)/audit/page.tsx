@@ -441,9 +441,9 @@ const AuditPage = () => {
       const headers = ['Date & Time', 'Action', 'Table', 'Record ID', 'Performed By', 'IP Address', 'Details'];
       const csvContent = [
         headers.join(','),
-        ...exportData.map(row => 
+        ...exportData.map((row: Record<string, string>) => 
           headers.map(header => 
-            JSON.stringify(row[header as keyof typeof row] || '')
+            JSON.stringify(row[header] || '')
           ).join(',')
         )
       ].join('\n');
