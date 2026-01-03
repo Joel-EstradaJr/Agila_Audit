@@ -3,7 +3,7 @@
 // ============================================================================
 
 import prisma from '../prisma/client';
-import { hashValue, compareHash, generateApiKey } from '../utils/hash.util';
+import { hashValue, generateApiKey } from '../utils/hash.util';
 import { CreateApiKeyDTO, ApiKeyValidationResult } from '../types/auditLog';
 
 /**
@@ -23,9 +23,7 @@ export async function createApiKey(data: CreateApiKeyDTO): Promise<{
       serviceName: data.serviceName,
       description: data.description,
       canWrite: data.canWrite ?? true,
-      canRead: data.canRead ?? false,
-      allowedModules: data.allowedModules ? JSON.stringify(data.allowedModules) : null,
-      expiresAt: data.expiresAt,
+      canRead: data.canRead ?? true,
       createdBy: data.createdBy,
     },
   });
@@ -51,9 +49,7 @@ export async function validateApiKey(rawKey: string): Promise<ApiKeyValidationRe
         serviceName: true,
         canWrite: true,
         canRead: true,
-        allowedModules: true,
         isActive: true,
-        expiresAt: true,
       },
     });
 
@@ -71,19 +67,6 @@ export async function validateApiKey(rawKey: string): Promise<ApiKeyValidationRe
       };
     }
 
-    if (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date()) {
-      return {
-        isValid: false,
-        error: 'API key has expired',
-      };
-    }
-
-    // Update last used timestamp
-    await prisma.apiKey.update({
-      where: { id: apiKey.id },
-      data: { lastUsedAt: new Date() },
-    });
-
     return {
       isValid: true,
       apiKey: {
@@ -91,7 +74,6 @@ export async function validateApiKey(rawKey: string): Promise<ApiKeyValidationRe
         serviceName: apiKey.serviceName,
         canWrite: apiKey.canWrite,
         canRead: apiKey.canRead,
-        allowedModules: apiKey.allowedModules || undefined,
       },
     };
   } catch (error: any) {
@@ -114,12 +96,10 @@ export async function listApiKeys(): Promise<any[]> {
       description: true,
       canWrite: true,
       canRead: true,
-      allowedModules: true,
       isActive: true,
-      expiresAt: true,
       createdAt: true,
       createdBy: true,
-      lastUsedAt: true,
+      updatedAt: true,
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -128,16 +108,11 @@ export async function listApiKeys(): Promise<any[]> {
 /**
  * Revoke an API key
  */
-export async function revokeApiKey(
-  id: number,
-  revokedBy?: string
-): Promise<void> {
+export async function revokeApiKey(id: number): Promise<void> {
   await prisma.apiKey.update({
     where: { id },
     data: {
       isActive: false,
-      revokedAt: new Date(),
-      revokedBy,
     },
   });
 }
@@ -163,14 +138,10 @@ export async function getApiKeyById(id: number): Promise<any | null> {
       description: true,
       canWrite: true,
       canRead: true,
-      allowedModules: true,
       isActive: true,
-      expiresAt: true,
       createdAt: true,
       createdBy: true,
-      lastUsedAt: true,
-      revokedAt: true,
-      revokedBy: true,
+      updatedAt: true,
     },
   });
 }

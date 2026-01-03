@@ -56,4 +56,18 @@ action_type     action_type @relation(fields: [action_type_id], references: [id]
 @@index([ip_address])
 }
 
+model ApiKey {
+  id          Int     @id @default(autoincrement())
+  keyHash     String  @unique
+  serviceName String
+  description String?
+  canWrite    Boolean
+  canRead     Boolean
+  isActive    Boolean @default(true)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
 // END OF FINANCE AUDIT LOGS MICROSERVICE SCHEMA

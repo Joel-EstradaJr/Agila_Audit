@@ -13,8 +13,7 @@ import { apiRateLimiter } from './middlewares/rateLimit.middleware';
 import superAdminRoutes from './routes/super_admin.routes';
 import departmentAdminRoutes from './routes/department_admin.routes';
 import userRoutes from './routes/user.routes';
-// import summariesRoutes from './routes/summaries.routes'; // Disabled: model not in schema
-// import apiKeysRoutes from './routes/apiKeys.routes'; // Disabled: model not in schema
+import apiKeysRoutes from './routes/apiKeys.routes';
 import auditLogsRoutes from './routes/auditLogs.routes';
 
 const app: Application = express();
@@ -80,9 +79,8 @@ app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/department-admin', departmentAdminRoutes);
 app.use('/api/user', userRoutes);
 
-// Other routes (disabled - models not in schema)
-// app.use('/api/summaries', summariesRoutes);
-// app.use('/api/keys', apiKeysRoutes);
+// Other routes
+app.use('/api/keys', apiKeysRoutes);
 
 // ============================================================================
 // ERROR HANDLING

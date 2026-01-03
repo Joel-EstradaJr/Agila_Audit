@@ -96,9 +96,7 @@ export interface CreateApiKeyDTO {
   description?: string;
   canWrite?: boolean;
   canRead?: boolean;
-  allowedModules?: string[];
-  expiresAt?: Date;
-  createdBy?: string;
+  createdBy: string;
 }
 
 export interface ApiKeyValidationResult {
@@ -108,31 +106,8 @@ export interface ApiKeyValidationResult {
     serviceName: string;
     canWrite: boolean;
     canRead: boolean;
-    allowedModules?: string;
   };
   error?: string;
-}
-
-// ============================================================================
-// SUMMARY TYPES
-// ============================================================================
-export interface SummaryFilters {
-  dateFrom?: string;
-  dateTo?: string;
-  service?: string;
-  moduleName?: string;
-  action?: string;
-  groupBy?: 'day' | 'week' | 'month';
-}
-
-export interface AggregatedSummary {
-  date: Date;
-  sourceService: string;
-  moduleName: string;
-  action: string;
-  totalCount: number;
-  uniqueUsers: number;
-  avgProcessingTime?: number;
 }
 
 // ============================================================================

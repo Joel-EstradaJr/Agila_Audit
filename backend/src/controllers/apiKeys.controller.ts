@@ -45,7 +45,7 @@ export async function createApiKeyHandler(
   res: Response
 ): Promise<void> {
   try {
-    const { serviceName, description, canWrite, canRead, allowedModules, expiresAt } = req.body;
+    const { serviceName, description, canWrite, canRead } = req.body;
 
     if (!serviceName) {
       sendError(res, 'serviceName is required');
@@ -63,9 +63,7 @@ export async function createApiKeyHandler(
       description,
       canWrite,
       canRead,
-      allowedModules,
-      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-      createdBy: req.user?.username,
+      createdBy: req.user?.username || 'system',
     });
 
     sendSuccess(
@@ -139,7 +137,7 @@ export async function revokeApiKeyHandler(
       return;
     }
 
-    await revokeApiKey(id, req.user?.username);
+    await revokeApiKey(id);
 
     sendSuccess(res, 'API key revoked successfully');
   } catch (error: any) {
