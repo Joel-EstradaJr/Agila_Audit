@@ -10,10 +10,10 @@ import prisma from './prisma/client';
 dotenv.config();
 
 // Backend port priority:
-// 1. Railway/production: use PORT (auto-provided by Railway)
-// 2. Local development: use BACKEND_PORT
+// 1. Local development: use BACKEND_PORT (preferred for local dev)
+// 2. Railway/production: use PORT (auto-provided by Railway)
 // 3. Default fallback: 4001
-const PORT = process.env.PORT || process.env.BACKEND_PORT || 4001;
+const PORT = process.env.BACKEND_PORT || process.env.PORT || 4001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // ============================================================================
