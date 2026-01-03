@@ -564,6 +564,7 @@ const AuditPage = () => {
             <table className="data-table">
             <thead>
               <tr>
+                <th>No.</th>
                 <th onClick={() => handleSort('timestamp')} className="sortable">
                   Date & Time
                   {sortField === 'timestamp' && (
@@ -602,8 +603,9 @@ const AuditPage = () => {
                 </th>
               </tr>
             </thead>
-            <tbody>{currentRecords.map((log) => (
+            <tbody>{currentRecords.map((log, index) => (
               <tr key={log.log_id} onClick={() => setSelectedLog(log)}>
+                <td>{indexOfFirstRecord + index + 1}</td>
                 <td>{formatDateTime(log.timestamp)}</td>
                 <td>{log.action || 'N/A'}</td>
                 <td>{formatDisplayText(log.table_affected || '')}</td>
