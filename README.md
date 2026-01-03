@@ -148,7 +148,7 @@ audit/
 3. **Environment Variables:**
    ```
    NODE_ENV=production
-   AUDIT_LOGS_DATABASE_URL=${{Postgres.DATABASE_URL}}
+   DATABASE_URL=${{Postgres.DATABASE_URL}}
    CORS_ORIGIN=https://your-frontend.vercel.app
    JWT_SECRET=your-production-secret
    # Add all other env vars from backend/.env.production.example
@@ -166,7 +166,7 @@ audit/
 
 ### Backend (.env)
 - `BACKEND_PORT` / `PORT` - Backend port (default: 5000)
-- `AUDIT_LOGS_DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_URL` - PostgreSQL connection string
 - `CORS_ORIGIN` - Allowed frontend origins
 - `JWT_SECRET` - Secret for JWT verification
 - `DISABLE_AUTH` - Set to `true` for local testing only
