@@ -17,7 +17,6 @@ url      = env("DATABASE_URL")
 model action_type {
 id          Int        @id @default(autoincrement())
 code        String     @unique   // e.g., CREATE, UPDATE, DELETE, APPROVE, REJECT
-description String?
 is_active   Boolean    @default(true)
 created_at  DateTime   @default(now())
 updated_at  DateTime   @updatedAt
@@ -60,7 +59,6 @@ model ApiKey {
   id          Int     @id @default(autoincrement())
   keyHash     String  @unique
   serviceName String
-  description String?
   canWrite    Boolean
   canRead     Boolean
   isActive    Boolean @default(true)

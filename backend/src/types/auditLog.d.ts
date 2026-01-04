@@ -63,7 +63,6 @@ export interface AuditLogResponse {
   action_type: {
     id: number;
     code: string;
-    description: string | null;
   };
   action_by: string | null;
   action_at: Date;
@@ -93,7 +92,6 @@ export interface AuditLogBriefResponse {
 // ============================================================================
 export interface CreateApiKeyDTO {
   serviceName: string;
-  description?: string;
   canWrite?: boolean;
   canRead?: boolean;
   createdBy: string;

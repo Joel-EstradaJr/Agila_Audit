@@ -21,7 +21,6 @@ export async function createApiKey(data: CreateApiKeyDTO): Promise<{
     data: {
       keyHash,
       serviceName: data.serviceName,
-      description: data.description,
       canWrite: data.canWrite ?? true,
       canRead: data.canRead ?? true,
       createdBy: data.createdBy,
@@ -93,7 +92,6 @@ export async function listApiKeys(): Promise<any[]> {
     select: {
       id: true,
       serviceName: true,
-      description: true,
       canWrite: true,
       canRead: true,
       isActive: true,
@@ -135,7 +133,6 @@ export async function getApiKeyById(id: number): Promise<any | null> {
     select: {
       id: true,
       serviceName: true,
-      description: true,
       canWrite: true,
       canRead: true,
       isActive: true,

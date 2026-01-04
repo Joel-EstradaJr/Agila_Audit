@@ -76,7 +76,6 @@ export async function createAuditLog(
         select: {
           id: true,
           code: true,
-          description: true,
         },
       },
     },
@@ -258,7 +257,6 @@ export async function getAuditLogById(
         select: {
           id: true,
           code: true,
-          description: true,
         },
       },
     },
@@ -291,7 +289,6 @@ export async function getEntityHistory(
         select: {
           id: true,
           code: true,
-          description: true,
         },
       },
     },
@@ -362,7 +359,6 @@ export async function getAuditLogStats(user: JWTUser): Promise<any> {
     select: {
       id: true,
       code: true,
-      description: true,
     },
   });
 
@@ -413,7 +409,6 @@ export async function searchAuditLogs(
           select: {
             id: true,
             code: true,
-            description: true,
           },
         },
       },
