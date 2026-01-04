@@ -16,7 +16,6 @@ dotenv.config();
 interface SeedApiKey {
   serviceName: string;
   rawKey: string;
-  description: string;
   canWrite: boolean;
   canRead: boolean;
 }
@@ -25,28 +24,24 @@ const defaultApiKeys: SeedApiKey[] = [
   {
     serviceName: 'finance',
     rawKey: process.env.FINANCE_API_KEY || 'FINANCE_DEFAULT_KEY',
-    description: 'Finance microservice API key',
     canWrite: true,
     canRead: false,
   },
   {
     serviceName: 'hr',
     rawKey: process.env.HR_API_KEY || 'HR_DEFAULT_KEY',
-    description: 'HR microservice API key',
     canWrite: true,
     canRead: false,
   },
   {
     serviceName: 'inventory',
     rawKey: process.env.INVENTORY_API_KEY || 'INVENTORY_DEFAULT_KEY',
-    description: 'Inventory microservice API key',
     canWrite: true,
     canRead: false,
   },
   {
     serviceName: 'operations',
-    rawKey: process.env.OPERATIONS_API_KEY || 'OPERATIONS_API_KEY',
-    description: 'Operations microservice API key',
+    rawKey: process.env.OPERATIONS_API_KEY || 'OPERATIONS_DEFAULT_KEY',
     canWrite: true,
     canRead: false,
   },
@@ -80,7 +75,6 @@ async function seedApiKeys() {
         data: {
           keyHash,
           serviceName: keyConfig.serviceName,
-          description: keyConfig.description,
           canWrite: keyConfig.canWrite,
           canRead: keyConfig.canRead,
           isActive: true,

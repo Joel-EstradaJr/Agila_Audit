@@ -10,7 +10,7 @@ import { formatDisplayText } from '@/app/utils/formatting';
 import FilterDropdown, { FilterSection } from "@app/Components/filter";
 
 // Backend API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4004';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002';
 
 type AuditLog = {
   // Backend fields (from schema)
@@ -21,6 +21,8 @@ type AuditLog = {
   action_type_code: string;
   action_by: string | null;
   action_at: string;
+  previous_data?: any | null;
+  new_data?: any | null;
   version: number;
   ip_address: string | null;
   created_at: string;
@@ -66,8 +68,12 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
       case 'CREATE': return '✨';
       case 'UPDATE': return '✏️';
       case 'DELETE': return '🗑️';
+      case 'ARCHIVE': return '📦';
+      case 'UNARCHIVE': return '📂';
       case 'EXPORT': return '📤';
-      case 'VIEW': return '👁️';
+      case 'IMPORT': return '📥';
+      case 'LOGIN': return '🔓';
+      case 'LOGOUT': return '🔒';
       default: return '📋';
     }
   };
@@ -186,6 +192,8 @@ const AuditPage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [selectedLogDetails, setSelectedLogDetails] = useState<AuditLog | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [sortField, setSortField] = useState<keyof AuditLog | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -195,8 +203,12 @@ const AuditPage = () => {
     { id: 'CREATE', label: 'Create' },
     { id: 'UPDATE', label: 'Update' },
     { id: 'DELETE', label: 'Delete' },
+    { id: 'ARCHIVE', label: 'Archive' },
+    { id: 'UNARCHIVE', label: 'Unarchive' },
     { id: 'EXPORT', label: 'Export' },
-    { id: 'VIEW', label: 'View' }
+    { id: 'IMPORT', label: 'Import' },
+    { id: 'LOGIN', label: 'Login' },
+    { id: 'LOGOUT', label: 'Logout' }
   ];
 
   // Available roles for filtering
@@ -240,6 +252,67 @@ const AuditPage = () => {
       options: availableDepartments
     }
   ];
+
+  // Fetch full audit log details by ID
+  const fetchAuditLogDetails = async (logId: string) => {
+    setLoadingDetails(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/audit-logs/${logId}`,
+        {
+          headers: {
+            'x-api-key': 'FINANCE_DEFAULT_KEY',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audit log details: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success || !result.data) {
+        throw new Error(result.message || 'Failed to fetch audit log details');
+      }
+
+      const log = result.data;
+      
+      // Transform the full audit log data
+      const transformedLog: AuditLog = {
+        id: log.id,
+        entity_type: log.entity_type,
+        entity_id: log.entity_id,
+        action_type_id: log.action_type_id,
+        action_type_code: log.action_type?.code || 'UNKNOWN',
+        action_by: log.action_by,
+        action_at: log.action_at,
+        previous_data: log.previous_data,
+        new_data: log.new_data,
+        version: log.version,
+        ip_address: log.ip_address,
+        created_at: log.created_at,
+        // Mapped fields
+        log_id: String(log.id),
+        action: log.action_type?.code || 'UNKNOWN',
+        table_affected: log.entity_type,
+        record_id: log.entity_id,
+        performed_by: log.action_by || 'System',
+        timestamp: log.action_at,
+        // Use backend-generated details with full data context
+        details: log.details || `Version ${log.version} - ${log.action_type?.code} on ${log.entity_type}`
+      };
+
+      setSelectedLogDetails(transformedLog);
+    } catch (err: unknown) {
+      console.error('Error fetching audit log details:', err);
+      // Show error to user
+      showError('Failed to load audit log details. Please try again.', 'Error');
+      setSelectedLogDetails(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
 
   // fetch function moved out so it can be retried from ErrorDisplay
   const fetchAuditLogs = async () => {
@@ -307,7 +380,8 @@ const AuditPage = () => {
         record_id: log.entity_id,
         performed_by: log.action_by || 'System',
         timestamp: log.action_at,
-        details: `Version ${log.version} - ${log.action_type_code} on ${log.entity_type}`
+        // Use backend-generated details (single source of truth)
+        details: log.details || `Version ${log.version} - ${log.action_type_code} on ${log.entity_type}`
       }));
       
       setAuditLogs(transformedLogs);
@@ -434,7 +508,8 @@ const AuditPage = () => {
         'Record ID': log.entity_id || log.record_id,
         'Performed By': log.action_by || log.performed_by,
         'IP Address': log.ip_address || 'N/A',
-        'Details': `Version ${log.version} - ${log.action_type_code} on ${log.entity_type}`
+        // Use backend-generated details (single source of truth)
+        'Details': log.details || `Version ${log.version} - ${log.action_type_code} on ${log.entity_type}`
       }));
 
       // Convert to CSV
@@ -593,7 +668,12 @@ const AuditPage = () => {
               </tr>
             </thead>
             <tbody>{currentRecords.map((log, index) => (
-              <tr key={log.log_id} onClick={() => setSelectedLog(log)}>
+              <tr key={log.log_id} onClick={() => {
+                setSelectedLog(log);
+                if (log.log_id) {
+                  fetchAuditLogDetails(log.log_id);
+                }
+              }}>
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>{formatDateTime(log.timestamp)}</td>
                 <td>{log.action || 'N/A'}</td>
@@ -615,8 +695,11 @@ const AuditPage = () => {
         />
         {selectedLog && (
           <ViewDetailsModal
-            log={selectedLog}
-            onClose={() => setSelectedLog(null)}
+            log={loadingDetails ? selectedLog : (selectedLogDetails || selectedLog)}
+            onClose={() => {
+              setSelectedLog(null);
+              setSelectedLogDetails(null);
+            }}
           />
         )}
       </div>

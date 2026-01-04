@@ -45,7 +45,7 @@ export async function createApiKeyHandler(
   res: Response
 ): Promise<void> {
   try {
-    const { serviceName, description, canWrite, canRead } = req.body;
+    const { serviceName, canWrite, canRead } = req.body;
 
     if (!serviceName) {
       sendError(res, 'serviceName is required');
@@ -60,7 +60,6 @@ export async function createApiKeyHandler(
 
     const result = await createApiKey({
       serviceName: serviceName.toLowerCase(),
-      description,
       canWrite,
       canRead,
       createdBy: req.user?.username || 'system',

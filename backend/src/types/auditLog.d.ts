@@ -63,7 +63,6 @@ export interface AuditLogResponse {
   action_type: {
     id: number;
     code: string;
-    description: string | null;
   };
   action_by: string | null;
   action_at: Date;
@@ -72,6 +71,7 @@ export interface AuditLogResponse {
   version: number;
   ip_address: string | null;
   created_at: Date;
+  details?: string;              // Human-readable description (computed, not stored)
 }
 
 // Brief version for list view
@@ -86,6 +86,7 @@ export interface AuditLogBriefResponse {
   version: number;
   ip_address: string | null;     // From schema
   created_at: Date;              // From schema
+  details?: string;              // Human-readable description (computed, not stored)
 }
 
 // ============================================================================
@@ -93,7 +94,6 @@ export interface AuditLogBriefResponse {
 // ============================================================================
 export interface CreateApiKeyDTO {
   serviceName: string;
-  description?: string;
   canWrite?: boolean;
   canRead?: boolean;
   createdBy: string;
