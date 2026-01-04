@@ -307,7 +307,7 @@ const AuditPage = () => {
     } catch (err: unknown) {
       console.error('Error fetching audit log details:', err);
       // Show error to user
-      showError('Failed to load audit log details. Please try again.');
+      showError('Failed to load audit log details. Please try again.', 'Error');
       setSelectedLogDetails(null);
     } finally {
       setLoadingDetails(false);
