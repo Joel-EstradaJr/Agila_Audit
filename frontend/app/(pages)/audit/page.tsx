@@ -21,6 +21,8 @@ type AuditLog = {
   action_type_code: string;
   action_by: string | null;
   action_at: string;
+  previous_data?: any | null;
+  new_data?: any | null;
   version: number;
   ip_address: string | null;
   created_at: string;
