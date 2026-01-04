@@ -284,6 +284,7 @@ const AuditPage = () => {
         entity_type: log.entity_type,
         entity_id: log.entity_id,
         action_type_id: log.action_type_id,
+        action_type_code: log.action_type?.code || 'UNKNOWN',
         action_by: log.action_by,
         action_at: log.action_at,
         previous_data: log.previous_data,
