@@ -10,6 +10,7 @@ import {
   AuditLogResponse,
   AuditLogBriefResponse,
 } from '../types/auditLog';
+import { buildAuditDetails, buildBriefAuditDetails } from '../utils/auditDetails.util';
 
 /**
  * Get the next version number for an entity
@@ -216,19 +217,38 @@ export async function getAuditLogs(
     },
   });
 
-  // Transform to brief format
-  const briefLogs: AuditLogBriefResponse[] = logs.map((log) => ({
-    id: log.id,
-    entity_type: log.entity_type,
-    entity_id: log.entity_id,
-    action_type_id: log.action_type_id,    // Schema field
-    action_type_code: log.action_type.code, // Computed for convenience
-    action_by: log.action_by,
-    action_at: log.action_at,
-    version: log.version,
-    ip_address: log.ip_address,            // Schema field
-    created_at: log.created_at,            // Schema field
-  }));
+  // Transform to brief format and add details
+  const briefLogs: AuditLogBriefResponse[] = logs.map((log) => {
+    const briefLog: AuditLogBriefResponse = {
+      id: log.id,
+      entity_type: log.entity_type,
+      entity_id: log.entity_id,
+      action_type_id: log.action_type_id,    // Schema field
+      action_type_code: log.action_type.code, // Computed for convenience
+      action_by: log.action_by,
+      action_at: log.action_at,
+      version: log.version,
+      ip_address: log.ip_address,            // Schema field
+      created_at: log.created_at,            // Schema field
+    };
+    
+    // Generate human-readable details
+    try {
+      briefLog.details = buildBriefAuditDetails(
+        log.entity_type,
+        log.entity_id,
+        log.action_type.code,
+        log.action_by,
+        log.action_at,
+        log.ip_address
+      );
+    } catch (error: any) {
+      console.error(`Error building details for audit log ${log.id}:`, error.message);
+      briefLog.details = `Audit log entry for ${log.entity_type} (ID: ${log.entity_id}).`;
+    }
+    
+    return briefLog;
+  });
 
   return {
     logs: briefLogs,
@@ -262,6 +282,16 @@ export async function getAuditLogById(
     },
   });
 
+  // Add details field if log exists
+  if (log) {
+    try {
+      (log as AuditLogResponse).details = buildAuditDetails(log as AuditLogResponse);
+    } catch (error: any) {
+      console.error(`Error building details for audit log ${log.id}:`, error.message);
+      (log as AuditLogResponse).details = `Audit log entry for ${log.entity_type} (ID: ${log.entity_id}).`;
+    }
+  }
+
   return log;
 }
 
@@ -294,7 +324,19 @@ export async function getEntityHistory(
     },
   });
 
-  return logs;
+  // Add details field to each log
+  const logsWithDetails = logs.map((log) => {
+    const auditLog = log as AuditLogResponse;
+    try {
+      auditLog.details = buildAuditDetails(auditLog);
+    } catch (error: any) {
+      console.error(`Error building details for audit log ${log.id}:`, error.message);
+      auditLog.details = `Audit log entry for ${log.entity_type} (ID: ${log.entity_id}).`;
+    }
+    return auditLog;
+  });
+
+  return logsWithDetails;
 }
 
 /**
@@ -416,5 +458,17 @@ export async function searchAuditLogs(
     prisma.audit_log.count({ where }),
   ]);
 
-  return { logs, total };
+  // Add details field to each log
+  const logsWithDetails = logs.map((log) => {
+    const auditLog = log as AuditLogResponse;
+    try {
+      auditLog.details = buildAuditDetails(auditLog);
+    } catch (error: any) {
+      console.error(`Error building details for audit log ${log.id}:`, error.message);
+      auditLog.details = `Audit log entry for ${log.entity_type} (ID: ${log.entity_id}).`;
+    }
+    return auditLog;
+  });
+
+  return { logs: logsWithDetails, total };
 }

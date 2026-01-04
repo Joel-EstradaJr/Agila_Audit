@@ -9,6 +9,10 @@ const prisma = new PrismaClient();
 async function seedAuditLogs() {
   console.log('🌱 Seeding audit logs...');
 
+  // Delete existing audit logs first to avoid duplicates
+  const deleteResult = await prisma.audit_log.deleteMany({});
+  console.log(`🗑️  Deleted ${deleteResult.count} existing audit log records`);
+
   // First, ensure action types exist
   const actionTypes = await prisma.action_type.findMany();
   if (actionTypes.length === 0) {
@@ -25,9 +29,11 @@ async function seedAuditLogs() {
   const exportAction = actionTypes.find(at => at.code === 'EXPORT');
   const loginAction = actionTypes.find(at => at.code === 'LOGIN');
   const logoutAction = actionTypes.find(at => at.code === 'LOGOUT');
+  const archiveAction = actionTypes.find(at => at.code === 'ARCHIVE');
+  const unarchiveAction = actionTypes.find(at => at.code === 'UNARCHIVE');
 
   // Filter only available actions
-  const availableActions = [createAction, updateAction, deleteAction, exportAction, loginAction, logoutAction].filter(Boolean);
+  const availableActions = [createAction, updateAction, deleteAction, exportAction, loginAction, logoutAction, archiveAction, unarchiveAction].filter(Boolean);
   
   if (availableActions.length === 0) {
     console.log('❌ No valid action types found');
@@ -36,111 +42,175 @@ async function seedAuditLogs() {
 
   console.log(`✅ Using ${availableActions.length} action types: ${availableActions.map(a => a?.code).join(', ')}`);
 
-  // Sample data configurations
-  const entityTypes = ['ExpenseRecord', 'RevenueRecord', 'Receipt', 'Reimbursement', 'Budget', 'Department'];
-  const users = [
-    'john.doe@company.com',
-    'jane.smith@company.com', 
-    'admin@company.com',
-    'finance.manager@company.com',
-    'budget.officer@company.com',
-    'hr.admin@company.com',
-    'dept.head@company.com'
-  ];
-  const ipAddresses = [
-    '192.168.1.100',
-    '192.168.1.101', 
-    '10.0.0.25',
-    '172.16.0.50',
-    '192.168.2.15'
-  ];
-
-  // Generate 60 audit log records
+  // Create one record for each action type
   const auditLogs: Prisma.audit_logCreateInput[] = [];
-  const totalRecords = 60;
+  const baseDate = new Date('2026-01-05T10:00:00Z');
 
-  for (let i = 1; i <= totalRecords; i++) {
-    const randomActionType = availableActions[Math.floor(Math.random() * availableActions.length)]!;
-    const randomEntityType = entityTypes[Math.floor(Math.random() * entityTypes.length)];
-    const randomUser = users[Math.floor(Math.random() * users.length)];
-    const randomIP = i % 7 === 0 ? undefined : ipAddresses[Math.floor(Math.random() * ipAddresses.length)]; // Some without IP
-    
-    // Generate random dates within the last 90 days
-    const daysAgo = Math.floor(Math.random() * 90);
-    const hoursAgo = Math.floor(Math.random() * 24);
-    const actionDate = new Date();
-    actionDate.setDate(actionDate.getDate() - daysAgo);
-    actionDate.setHours(actionDate.getHours() - hoursAgo);
-
-    const entityId = `${randomEntityType.toLowerCase()}_${1000 + i}`;
-
-    // Generate realistic previous and new data based on action type
-    let previousData: Prisma.InputJsonValue | undefined = undefined;
-    let newData: Prisma.InputJsonValue | undefined = undefined;
-
-    if (randomActionType.code === 'CREATE') {
-      newData = {
-        amount: Math.floor(Math.random() * 10000) + 100,
-        status: 'pending',
-        description: `New ${randomEntityType} created`,
-        createdBy: randomUser,
-        date: actionDate.toISOString().split('T')[0]
-      };
-    } else if (randomActionType.code === 'UPDATE') {
-      previousData = {
-        amount: Math.floor(Math.random() * 5000) + 100,
-        status: 'pending',
-        updatedBy: randomUser
-      };
-      newData = {
-        amount: Math.floor(Math.random() * 10000) + 100,
-        status: Math.random() > 0.5 ? 'approved' : 'rejected',
-        updatedBy: randomUser
-      };
-    } else if (randomActionType.code === 'DELETE') {
-      previousData = {
-        amount: Math.floor(Math.random() * 5000) + 100,
-        status: 'draft',
-        deletedBy: randomUser,
-        reason: 'Duplicate entry'
-      };
-    } else if (randomActionType.code === 'EXPORT') {
-      newData = {
-        format: 'CSV',
-        recordCount: Math.floor(Math.random() * 500) + 10,
-        dateRange: `${daysAgo} days ago`,
-        exportedBy: randomUser
-      };
-    } else if (randomActionType.code === 'LOGIN') {
-      newData = {
-        user: randomUser,
-        timestamp: actionDate.toISOString(),
-        method: 'credentials'
-      };
-    } else if (randomActionType.code === 'LOGOUT') {
-      previousData = {
-        sessionDuration: `${Math.floor(Math.random() * 480)} minutes`,
-        user: randomUser
-      };
-    }
-
+  // 1. CREATE action - Uses new_data only, version=1
+  if (createAction) {
     auditLogs.push({
-      entity_type: randomEntityType,
-      entity_id: entityId,
-      action_type: {
-        connect: { id: randomActionType.id }
+      entity_type: 'ExpenseRecord',
+      entity_id: 'EXP-1001',
+      action_type: { connect: { id: createAction.id } },
+      action_by: 'john.doe@company.com',
+      action_at: new Date(baseDate.getTime()),
+      // previous_data omitted - CREATE never uses it
+      new_data: {
+        amount: 1500,
+        status: 'pending',
+        description: 'New expense record created',
+        category: 'Travel',
+        date: '2026-01-05'
       },
-      action_by: randomUser,
-      action_at: actionDate,
-      previous_data: previousData,
-      new_data: newData,
+      version: 1, // CREATE always starts at version 1
+      ip_address: '192.168.1.100'
+    });
+  }
+
+  // 2. UPDATE action - Uses both previous_data and new_data, version increments
+  if (updateAction) {
+    auditLogs.push({
+      entity_type: 'ExpenseRecord',
+      entity_id: 'EXP-1001', // Same entity as CREATE to show version increment
+      action_type: { connect: { id: updateAction.id } },
+      action_by: 'jane.smith@company.com',
+      action_at: new Date(baseDate.getTime() + 3600000), // +1 hour
+      previous_data: {
+        amount: 1500,
+        status: 'pending',
+        approvedBy: null
+      },
+      new_data: {
+        amount: 1800,
+        status: 'approved',
+        approvedBy: 'jane.smith@company.com'
+      },
+      version: 2, // UPDATE increments version (previous CREATE was version 1)
+      ip_address: '192.168.1.101'
+    });
+  }
+
+  // 3. DELETE action - Requires previous_data (what was deleted)
+  if (deleteAction) {
+    auditLogs.push({
+      entity_type: 'ExpenseRecord',
+      entity_id: 'EXP-1002',
+      action_type: { connect: { id: deleteAction.id } },
+      action_by: 'admin@company.com',
+      action_at: new Date(baseDate.getTime() + 7200000), // +2 hours
+      previous_data: {
+        amount: 2500,
+        status: 'rejected',
+        description: 'Duplicate expense entry',
+        category: 'Travel',
+        rejectedBy: 'admin@company.com',
+        rejectionReason: 'Duplicate submission'
+      },
+      // new_data omitted - DELETE doesn't use new_data
       version: 1,
-      ip_address: randomIP
+      ip_address: '192.168.1.102'
+    });
+  }
+
+  // 4. EXPORT action - No data changes tracked, entity_id is reference
+  if (exportAction) {
+    auditLogs.push({
+      entity_type: 'AuditLog',
+      entity_id: 'EXPORT-20260105-001',
+      action_type: { connect: { id: exportAction.id } },
+      action_by: 'finance.manager@company.com',
+      action_at: new Date(baseDate.getTime() + 10800000), // +3 hours
+      // previous_data and new_data omitted - EXPORT doesn't track data changes
+      version: 1,
+      ip_address: '192.168.1.103'
+    });
+  }
+
+  // 5. IMPORT action - No data changes tracked, entity_id is reference
+  const importAction = actionTypes.find(at => at.code === 'IMPORT');
+  if (importAction) {
+    auditLogs.push({
+      entity_type: 'ExpenseRecord',
+      entity_id: 'IMPORT-20260105-001',
+      action_type: { connect: { id: importAction.id } },
+      action_by: 'system',
+      action_at: new Date(baseDate.getTime() + 14400000), // +4 hours
+      // previous_data and new_data omitted - IMPORT doesn't track data changes
+      version: 1,
+      ip_address: '10.0.0.25'
+    });
+  }
+
+  // 6. LOGIN action - No data changes tracked
+  if (loginAction) {
+    auditLogs.push({
+      entity_type: 'UserSession',
+      entity_id: 'SESSION-john.doe-1735988400000',
+      action_type: { connect: { id: loginAction.id } },
+      action_by: 'john.doe@company.com',
+      action_at: new Date(baseDate.getTime() + 18000000), // +5 hours
+      // previous_data and new_data omitted - LOGIN doesn't track data changes
+      version: 1,
+      ip_address: '192.168.1.50'
+    });
+  }
+
+  // 7. LOGOUT action - No data changes tracked
+  if (logoutAction) {
+    auditLogs.push({
+      entity_type: 'UserSession',
+      entity_id: 'SESSION-john.doe-1735988400000',
+      action_type: { connect: { id: logoutAction.id } },
+      action_by: 'john.doe@company.com',
+      action_at: new Date(baseDate.getTime() + 36000000), // +10 hours
+      // previous_data and new_data omitted - LOGOUT doesn't track data changes
+      version: 2, // Version 2 since it's a follow-up action on the same session
+      ip_address: '192.168.1.50'
+    });
+  }
+
+  // 8. ARCHIVE action - Uses new_data for new status
+  if (archiveAction) {
+    auditLogs.push({
+      entity_type: 'ExpenseRecord',
+      entity_id: 'EXP-1003',
+      action_type: { connect: { id: archiveAction.id } },
+      action_by: 'finance.manager@company.com',
+      action_at: new Date(baseDate.getTime() + 21600000), // +6 hours
+      new_data: {
+        status: 'archived',
+        archivedBy: 'finance.manager@company.com',
+        archivedAt: '2026-01-05T16:00:00Z',
+        reason: 'End of fiscal year archival'
+      },
+      // previous_data omitted - ARCHIVE doesn't use previous_data
+      version: 1,
+      ip_address: '192.168.1.104'
+    });
+  }
+
+  // 9. UNARCHIVE action - Uses new_data for new status
+  if (unarchiveAction) {
+    auditLogs.push({
+      entity_type: 'ExpenseRecord',
+      entity_id: 'EXP-1003',
+      action_type: { connect: { id: unarchiveAction.id } },
+      action_by: 'finance.manager@company.com',
+      action_at: new Date(baseDate.getTime() + 25200000), // +7 hours
+      new_data: {
+        status: 'active',
+        unarchivedBy: 'finance.manager@company.com',
+        unarchivedAt: '2026-01-05T17:00:00Z',
+        reason: 'Record needed for audit review'
+      },
+      // previous_data omitted - UNARCHIVE doesn't use previous_data
+      version: 2, // Version 2 since it's following the ARCHIVE action
+      ip_address: '192.168.1.104'
     });
   }
 
   // Insert all audit logs
-  console.log(`📝 Creating ${totalRecords} audit log records...`);
+  console.log(`📝 Creating ${auditLogs.length} audit log records (one per action type)...`);
   let successCount = 0;
 
   for (const log of auditLogs) {
@@ -149,15 +219,13 @@ async function seedAuditLogs() {
         data: log
       });
       successCount++;
-      if (successCount % 10 === 0) {
-        console.log(`   ✓ Created ${successCount}/${totalRecords} records...`);
-      }
+      console.log(`   ✓ Created ${successCount}/${auditLogs.length} records...`);
     } catch (error) {
       console.error(`❌ Error creating audit log:`, error);
     }
   }
 
-  console.log(`✨ Audit logs seeding completed! Created ${successCount}/${totalRecords} records.`);
+  console.log(`✨ Audit logs seeding completed! Created ${successCount}/${auditLogs.length} records.`);
 }
 
 async function main() {

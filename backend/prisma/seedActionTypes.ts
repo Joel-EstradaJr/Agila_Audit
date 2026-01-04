@@ -37,6 +37,14 @@ async function seedActionTypes() {
     {
       code: 'LOGOUT',
       is_active: true,
+    },
+    {
+      code: 'ARCHIVE',
+      is_active: true,
+    },
+    {
+      code: 'UNARCHIVE',
+      is_active: true,
     }
   ];
 

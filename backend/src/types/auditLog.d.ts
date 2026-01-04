@@ -71,6 +71,7 @@ export interface AuditLogResponse {
   version: number;
   ip_address: string | null;
   created_at: Date;
+  details?: string;              // Human-readable description (computed, not stored)
 }
 
 // Brief version for list view
@@ -85,6 +86,7 @@ export interface AuditLogBriefResponse {
   version: number;
   ip_address: string | null;     // From schema
   created_at: Date;              // From schema
+  details?: string;              // Human-readable description (computed, not stored)
 }
 
 // ============================================================================

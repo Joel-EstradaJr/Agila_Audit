@@ -35,10 +35,10 @@ entity_id       String
 action_type_id  Int       // FK → action_type
 action_by       String?
 action_at       DateTime  @default(now())
-previous_data   Json?     // store only fields that changed
-new_data        Json?     // store only fields that changed
-version         Int       @default(1) // versioning for the same entity changes
-ip_address      String?
+previous_data   Json?     // Used by: UPDATE (required), DELETE (required). Must NOT be used for CREATE, EXPORT, IMPORT, LOGIN, LOGOUT
+new_data        Json?     // Used by: CREATE (required), UPDATE (required). Must NOT be used for DELETE, EXPORT, IMPORT, LOGIN, LOGOUT
+version         Int       @default(1) // Incremented only by UPDATE actions
+ip_address      String?   // Used by: LOGIN, LOGOUT (optional for all)
 created_at      DateTime  @default(now())
 
 // versioning to be strictly sequential per entity

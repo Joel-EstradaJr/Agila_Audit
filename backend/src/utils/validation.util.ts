@@ -6,6 +6,10 @@ import { CreateAuditLogDTO, AuditLogFilters } from '../types/auditLog';
 
 /**
  * Validate audit log creation data (Updated for new schema)
+ * Rules:
+ * - CREATE: requires new_data, no previous_data
+ * - UPDATE: requires both previous_data and new_data
+ * - Others: neither previous_data nor new_data required
  */
 export function validateCreateAuditLog(data: any): {
   isValid: boolean;
@@ -25,18 +29,74 @@ export function validateCreateAuditLog(data: any): {
     errors.push('action_type_code is required and must be a string (e.g., CREATE, UPDATE, DELETE)');
   }
 
-  // action_by is optional but should be a string if provided
-  if (data.action_by && typeof data.action_by !== 'string') {
-    errors.push('action_by must be a string');
+  // Action-specific validations
+  const actionCode = data.action_type_code?.toUpperCase();
+  
+  if (actionCode === 'CREATE') {
+    // CREATE requires new_data
+    if (!data.new_data || typeof data.new_data !== 'object') {
+      errors.push('CREATE action requires new_data as an object');
+    }
+    // CREATE should not have previous_data
+    if (data.previous_data) {
+      errors.push('CREATE action should not have previous_data');
+    }
+  }
+  
+  if (actionCode === 'UPDATE') {
+    // UPDATE requires both previous_data and new_data
+    if (!data.previous_data || typeof data.previous_data !== 'object') {
+      errors.push('UPDATE action requires previous_data as an object');
+    }
+    if (!data.new_data || typeof data.new_data !== 'object') {
+      errors.push('UPDATE action requires new_data as an object');
+    }
+  }
+  
+  if (actionCode === 'DELETE') {
+    // DELETE requires previous_data (what was deleted)
+    if (!data.previous_data || typeof data.previous_data !== 'object') {
+      errors.push('DELETE action requires previous_data as an object');
+    }
+    // DELETE should not have new_data
+    if (data.new_data) {
+      errors.push('DELETE action should not have new_data');
+    }
+  }
+  
+  if (actionCode === 'ARCHIVE' || actionCode === 'UNARCHIVE') {
+    // ARCHIVE/UNARCHIVE requires new_data (new status field)
+    if (!data.new_data || typeof data.new_data !== 'object') {
+      errors.push(`${actionCode} action requires new_data as an object (must include status field)`);
+    }
+    // ARCHIVE/UNARCHIVE should not have previous_data
+    if (data.previous_data) {
+      errors.push(`${actionCode} action should not have previous_data`);
+    }
   }
 
-  // previous_data and new_data should be objects if provided
+  // For other action types (EXPORT, IMPORT, LOGIN, LOGOUT), data fields should not be provided
+  if (['EXPORT', 'IMPORT', 'LOGIN', 'LOGOUT'].includes(actionCode)) {
+    if (data.previous_data) {
+      errors.push(`${actionCode} action should not have previous_data`);
+    }
+    if (data.new_data) {
+      errors.push(`${actionCode} action should not have new_data`);
+    }
+  }
+  
+  // General validation for data fields if provided
   if (data.previous_data && typeof data.previous_data !== 'object') {
-    errors.push('previous_data must be an object');
+    errors.push('previous_data must be an object if provided');
   }
 
   if (data.new_data && typeof data.new_data !== 'object') {
-    errors.push('new_data must be an object');
+    errors.push('new_data must be an object if provided');
+  }
+
+  // action_by is optional but should be a string if provided
+  if (data.action_by && typeof data.action_by !== 'string') {
+    errors.push('action_by must be a string');
   }
 
   // ip_address is optional but should be a string if provided
