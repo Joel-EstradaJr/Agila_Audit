@@ -670,7 +670,9 @@ const AuditPage = () => {
             <tbody>{currentRecords.map((log, index) => (
               <tr key={log.log_id} onClick={() => {
                 setSelectedLog(log);
-                fetchAuditLogDetails(log.log_id);
+                if (log.log_id) {
+                  fetchAuditLogDetails(log.log_id);
+                }
               }}>
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>{formatDateTime(log.timestamp)}</td>
