@@ -1,7 +1,5 @@
-# Exclude backend files from Vercel deployment
-src/
-dist/
-tsconfig.server.json
+# Exclude backend from Vercel deployment (frontend only)
+backend/
 
 # Exclude local development files
 .env
@@ -10,3 +8,7 @@ tsconfig.server.json
 
 # Exclude documentation that's not needed for deployment
 docs/
+
+# Exclude backend-specific config files
+railway.json
+railway.env.txt
