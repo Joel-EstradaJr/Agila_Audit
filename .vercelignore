@@ -1,14 +1,10 @@
-# Exclude backend from Vercel deployment (frontend only)
-backend/
-
 # Exclude local development files
 .env
 .env.local
 *.log
 
-# Exclude documentation that's not needed for deployment
+# Exclude documentation
 docs/
 
-# Exclude backend-specific config files
+# Exclude backend-specific config (but not the backend directory itself for workspace)
 railway.json
-railway.env.txt
