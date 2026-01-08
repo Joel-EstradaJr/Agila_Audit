@@ -1,0 +1,10 @@
+# Local development files
+.env
+.env.local
+*.log
+
+# Development build artifacts
+.next/
+
+# Scripts
+scripts/
