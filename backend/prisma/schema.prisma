@@ -1,0 +1,71 @@
+// FINANCE AUDIT LOGS MICROSERVICE SCHEMA
+// ============================================================================
+
+generator client {
+provider = "prisma-client-js"
+}
+
+datasource db {
+provider = "postgresql"
+url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ACTION TYPES REFERENCE TABLE
+// ============================================================================
+
+model action_type {
+id          Int        @id @default(autoincrement())
+code        String     @unique   // e.g., CREATE, UPDATE, DELETE, APPROVE, REJECT
+is_active   Boolean    @default(true)
+created_at  DateTime   @default(now())
+updated_at  DateTime   @updatedAt
+
+audit_logs  audit_log[]
+}
+
+// ============================================================================
+// AUDIT LOGS
+// ============================================================================
+
+model audit_log {
+id              Int       @id @default(autoincrement())
+entity_type     String
+entity_id       String
+action_type_id  Int       // FK → action_type
+action_by       String?
+action_at       DateTime  @default(now())
+previous_data   Json?     // Used by: UPDATE (required), DELETE (required). Must NOT be used for CREATE, EXPORT, IMPORT, LOGIN, LOGOUT
+new_data        Json?     // Used by: CREATE (required), UPDATE (required). Must NOT be used for DELETE, EXPORT, IMPORT, LOGIN, LOGOUT
+version         Int       @default(1) // Incremented only by UPDATE actions
+ip_address      String?   // Used by: LOGIN, LOGOUT (optional for all)
+created_at      DateTime  @default(now())
+
+// versioning to be strictly sequential per entity
+@@unique([entity_type, entity_id, version])
+
+// Relations
+action_type     action_type @relation(fields: [action_type_id], references: [id])
+
+@@index([entity_type, entity_id])
+@@index([action_type_id])
+@@index([action_by])
+@@index([entity_type, action_type_id, action_at])
+@@index([action_at])
+@@index([ip_address])
+}
+
+model ApiKey {
+  id          Int     @id @default(autoincrement())
+  keyHash     String  @unique
+  serviceName String
+  canWrite    Boolean
+  canRead     Boolean
+  isActive    Boolean @default(true)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+// END OF FINANCE AUDIT LOGS MICROSERVICE SCHEMA

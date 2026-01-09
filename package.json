@@ -1,28 +1,31 @@
 {
-  "name": "audit_trail",
+  "name": "audit-trail-monorepo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 3003",
-    "build": "next build",
-    "start": "next start -p 3003",
-    "lint": "next lint"
+    "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:frontend\" --names \"BACKEND,FRONTEND\" --prefix-colors \"cyan,magenta\"",
+    "dev:frontend": "cd frontend && pnpm dev",
+    "dev:backend": "cd backend && pnpm dev",
+    "build": "cd frontend && pnpm build",
+    "build:frontend": "cd frontend && pnpm build",
+    "build:backend": "cd backend && pnpm build",
+    "start": "cd frontend && pnpm start",
+    "start:frontend": "cd frontend && pnpm start",
+    "start:backend": "cd backend && pnpm start",
+    "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install",
+    "setup": "pnpm install:all && cd backend && pnpm prisma:generate && pnpm prisma:migrate && pnpm seed:apikeys"
   },
   "dependencies": {
-    "next": "15.3.0",
+    "next": "16.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "sweetalert2": "^11.26.3"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "concurrently": "^9.2.1"
+  },
+  "packageManager": "pnpm@10.18.3+sha512.bbd16e6d7286fd7e01f6b3c0b3c932cda2965c06a908328f74663f10a9aea51f1129eea615134bf992831b009eabe167ecb7008b597f40ff9bc75946aadfb08d",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
 }

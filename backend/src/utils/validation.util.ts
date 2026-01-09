@@ -1,0 +1,199 @@
+// ============================================================================
+// VALIDATION UTILITY - INPUT VALIDATION HELPERS
+// ============================================================================
+
+import { CreateAuditLogDTO, AuditLogFilters } from '../types/auditLog';
+
+/**
+ * Validate audit log creation data (Updated for new schema)
+ * Rules:
+ * - CREATE: requires new_data, no previous_data
+ * - UPDATE: requires both previous_data and new_data
+ * - Others: neither previous_data nor new_data required
+ */
+export function validateCreateAuditLog(data: any): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (!data.entity_type || typeof data.entity_type !== 'string') {
+    errors.push('entity_type is required and must be a string');
+  }
+
+  if (!data.entity_id || typeof data.entity_id !== 'string') {
+    errors.push('entity_id is required and must be a string');
+  }
+
+  if (!data.action_type_code || typeof data.action_type_code !== 'string') {
+    errors.push('action_type_code is required and must be a string (e.g., CREATE, UPDATE, DELETE)');
+  }
+
+  // Action-specific validations
+  const actionCode = data.action_type_code?.toUpperCase();
+  
+  if (actionCode === 'CREATE') {
+    // CREATE requires new_data
+    if (!data.new_data || typeof data.new_data !== 'object') {
+      errors.push('CREATE action requires new_data as an object');
+    }
+    // CREATE should not have previous_data
+    if (data.previous_data) {
+      errors.push('CREATE action should not have previous_data');
+    }
+  }
+  
+  if (actionCode === 'UPDATE') {
+    // UPDATE requires both previous_data and new_data
+    if (!data.previous_data || typeof data.previous_data !== 'object') {
+      errors.push('UPDATE action requires previous_data as an object');
+    }
+    if (!data.new_data || typeof data.new_data !== 'object') {
+      errors.push('UPDATE action requires new_data as an object');
+    }
+  }
+  
+  if (actionCode === 'DELETE') {
+    // DELETE requires previous_data (what was deleted)
+    if (!data.previous_data || typeof data.previous_data !== 'object') {
+      errors.push('DELETE action requires previous_data as an object');
+    }
+    // DELETE should not have new_data
+    if (data.new_data) {
+      errors.push('DELETE action should not have new_data');
+    }
+  }
+  
+  if (actionCode === 'ARCHIVE' || actionCode === 'UNARCHIVE') {
+    // ARCHIVE/UNARCHIVE requires new_data (new status field)
+    if (!data.new_data || typeof data.new_data !== 'object') {
+      errors.push(`${actionCode} action requires new_data as an object (must include status field)`);
+    }
+    // ARCHIVE/UNARCHIVE should not have previous_data
+    if (data.previous_data) {
+      errors.push(`${actionCode} action should not have previous_data`);
+    }
+  }
+
+  // For other action types (EXPORT, IMPORT, LOGIN, LOGOUT), data fields should not be provided
+  if (['EXPORT', 'IMPORT', 'LOGIN', 'LOGOUT'].includes(actionCode)) {
+    if (data.previous_data) {
+      errors.push(`${actionCode} action should not have previous_data`);
+    }
+    if (data.new_data) {
+      errors.push(`${actionCode} action should not have new_data`);
+    }
+  }
+  
+  // General validation for data fields if provided
+  if (data.previous_data && typeof data.previous_data !== 'object') {
+    errors.push('previous_data must be an object if provided');
+  }
+
+  if (data.new_data && typeof data.new_data !== 'object') {
+    errors.push('new_data must be an object if provided');
+  }
+
+  // action_by is optional but should be a string if provided
+  if (data.action_by && typeof data.action_by !== 'string') {
+    errors.push('action_by must be a string');
+  }
+
+  // ip_address is optional but should be a string if provided
+  if (data.ip_address && typeof data.ip_address !== 'string') {
+    errors.push('ip_address must be a string');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validate date format (YYYY-MM-DD)
+ */
+export function isValidDate(dateString: string): boolean {
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(dateString)) return false;
+
+  const date = new Date(dateString);
+  return date instanceof Date && !isNaN(date.getTime());
+}
+
+/**
+ * Validate pagination parameters
+ */
+export function validatePagination(page?: any, limit?: any): {
+  page: number;
+  limit: number;
+} {
+  const validPage = Math.max(1, parseInt(page) || 1);
+  const validLimit = Math.min(100, Math.max(1, parseInt(limit) || 10));
+
+  return { page: validPage, limit: validLimit };
+}
+
+/**
+ * Sanitize filter inputs (Updated for new schema)
+ */
+export function sanitizeFilters(filters: any): AuditLogFilters {
+  return {
+    ...(filters.entity_type && { entity_type: String(filters.entity_type) }),
+    ...(filters.entity_id && { entity_id: String(filters.entity_id) }),
+    ...(filters.action_type_code && { action_type_code: String(filters.action_type_code) }),
+    ...(filters.action_by && { action_by: String(filters.action_by) }),
+    ...(filters.dateFrom && isValidDate(filters.dateFrom) && { dateFrom: filters.dateFrom }),
+    ...(filters.dateTo && isValidDate(filters.dateTo) && { dateTo: filters.dateTo }),
+    ...validatePagination(filters.page, filters.limit),
+    ...(filters.sortBy && { sortBy: String(filters.sortBy) }),
+    ...(filters.sortOrder && ['asc', 'desc'].includes(filters.sortOrder) && {
+      sortOrder: filters.sortOrder,
+    }),
+  };
+}
+
+/**
+ * Check if user role is SuperAdmin
+ */
+export function isSuperAdmin(role: string): boolean {
+  return role === 'SuperAdmin';
+}
+
+/**
+ * Check if user role is a department admin
+ */
+export function isDepartmentAdmin(role: string): boolean {
+  return role.includes('Admin') && !isSuperAdmin(role);
+}
+
+/**
+ * Extract department from role
+ * e.g., "Finance Admin" -> "finance"
+ */
+export function extractDepartmentFromRole(role: string): string | null {
+  const match = role.match(/^(\w+)\s+(Admin|Non-Admin)$/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/**
+ * Extract department from user ID
+ * Assumes user ID format: DEPT-YYYYMMDD-XXX
+ * e.g., "FIN-20250101-001" -> "finance"
+ */
+export function extractDepartmentFromUserId(userId: string): string | null {
+  const deptCodes: Record<string, string> = {
+    'FIN': 'finance',
+    'HR': 'hr',
+    'INV': 'inventory',
+    'OPS': 'operations',
+    'ADM': 'admin',
+  };
+
+  const match = userId.match(/^([A-Z]+)-/);
+  if (match && deptCodes[match[1]]) {
+    return deptCodes[match[1]];
+  }
+
+  return null;
+}
