@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import '@app/styles/Components/table.css';
 import "@app/styles/audit/audit.css";
 import PaginationComponent from "@app/Components/pagination";
@@ -151,6 +152,7 @@ const ViewDetailsModal: React.FC<ViewModalProps> = ({ log, onClose }) => {
 };
 
 const AuditPage = () => {
+  const router = useRouter();
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -455,17 +457,85 @@ const AuditPage = () => {
 
   if (loading) {
     return (
+      <>
+      {/* Back Button */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          width: '100%',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          margin: 10,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: 28,
+          zIndex: 10,
+          paddingLeft: 30
+        }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 28,
+              zIndex: 10
+            }}
+            aria-label="Go back"
+          >
+            <i className="ri-arrow-left-long-line"></i>
+          </button>
+        </div>
         <div className="card">
             <h1 className="title">Finance Tracking Management</h1>
             <Loading />
         </div>
+      </>
+        
     );
   }
 
   return (
-    <div className="card">
-      {/* <h1 className="title">Audit Logs</h1> */}
-      <div className="elements">
+    <>
+      {/* Back Button */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        margin: 10,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 28,
+        zIndex: 10,
+        paddingLeft: 30
+      }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 28,
+            zIndex: 10
+          }}
+          aria-label="Go back"
+        >
+          <i className="ri-arrow-left-long-line"></i>
+        </button>
+      </div>
+      <div className="card">
+        {/* <h1 className="title">Audit Logs</h1> */}
+        <div className="elements">
         <h1 className="title">Audit Logs</h1>
         <div className="settings">
           <div className="searchBar">
@@ -564,6 +634,7 @@ const AuditPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
