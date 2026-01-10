@@ -8,6 +8,7 @@ import Loading from '@app/Components/loading';
 import { showSuccess, showError, showConfirmation } from '@app/utils/Alerts';
 import { formatDisplayText } from '@/app/utils/formatting';
 import FilterDropdown, { FilterSection } from "@app/Components/filter";
+import { BackButton } from "@app/Components/backButton";
 
 // Backend API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002';
@@ -584,15 +585,28 @@ const AuditPage = () => {
 
   if (loading) {
     return (
-        <div className="card">
-            <h1 className="title">Finance Tracking Management</h1>
-            <Loading />
-        </div>
+        <>
+          <div style={{display: 'flex', flex: 1, width:'100%', paddingLeft: 30, paddingTop: 10, paddingBottom: 10}}>
+            <div style={{ display: 'flex', top: '1rem', left: '1rem', zIndex: 10 }}>
+              <BackButton variant="default" size="default" aria-label="Go back" />
+            </div>
+          </div>
+          <div className="card">
+              <h1 className="title">Finance Tracking Management</h1>
+              <Loading />
+          </div>
+        </>
     );
   }
 
   return (
-    <div className="card">
+    <>
+      <div style={{display: 'flex', flex: 1, width:'100%', paddingLeft: 30, paddingTop: 10, paddingBottom: 10}}>
+        <div style={{ display: 'flex', top: '1rem', left: '1rem', zIndex: 10 }}>
+          <BackButton variant="default" size="default" aria-label="Go back" />
+        </div>
+      </div>
+      <div className="card">
       {/* <h1 className="title">Audit Logs</h1> */}
       <div className="elements">
         <h1 className="title">Audit Logs</h1>
@@ -704,6 +718,7 @@ const AuditPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
